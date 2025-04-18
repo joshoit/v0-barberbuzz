@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { authenticateUser, createSession, setSessionCookie } from "@/lib/auth"
+import { createSession, setSessionCookie, verifyPassword } from "@/lib/auth"
+import { getBarberByEmail } from "@/lib/airtable"
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,10 +13,24 @@ export async function POST(request: NextRequest) {
     console.log(`Attempting login for email: ${email}`)
 
     try {
-      const user = await authenticateUser(email, password)
+      // Authenticate user (moved from auth.ts)
+      const barber = await getBarberByEmail(email)
 
-      if (!user) {
+      if (!barber) {
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+      }
+
+      const passwordValid = await verifyPassword(password, barber.passwordHash)
+
+      if (!passwordValid) {
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+      }
+
+      const user = {
+        id: barber.id,
+        name: barber.name,
+        email: barber.email,
+        isAdmin: barber.isAdmin,
       }
 
       // Create session token

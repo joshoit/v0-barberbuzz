@@ -2,7 +2,6 @@ import { cookies } from "next/headers"
 import { SignJWT, jwtVerify } from "jose"
 import type { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import { getBarberByEmail } from "./airtable"
 
 // Types
 export interface SessionUser {
@@ -77,20 +76,8 @@ export async function clearSessionCookie(response: NextResponse): Promise<void> 
   })
 }
 
-// Authentication functions
-export async function authenticateUser(email: string, password: string): Promise<SessionUser | null> {
-  const barber = await getBarberByEmail(email)
-
-  if (!barber) return null
-
-  const passwordValid = await verifyPassword(password, barber.passwordHash)
-
-  if (!passwordValid) return null
-
-  return {
-    id: barber.id,
-    name: barber.name,
-    email: barber.email,
-    isAdmin: barber.isAdmin,
-  }
-}
+// Authentication functions - moved to server-side routes
+// This function is now moved to the login API route to avoid Edge Runtime issues
+// export async function authenticateUser(email: string, password: string): Promise<SessionUser | null> {
+//   // This has been moved to app/api/login/route.ts
+// }

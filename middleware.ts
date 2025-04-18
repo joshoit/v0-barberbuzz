@@ -24,29 +24,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Admin routes - require admin access
-  if (pathname.startsWith("/admin")) {
-    if (!session) {
-      console.log(`Redirecting to login from: ${pathname} (no session)`)
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-
-    if (!session.isAdmin) {
-      console.log(`Redirecting to app from: ${pathname} (not admin)`)
-      return NextResponse.redirect(new URL("/app", request.url))
-    }
-
-    return NextResponse.next()
+  // Check if user is authenticated
+  if (!session) {
+    console.log(`Redirecting to login from: ${pathname} (no session)`)
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Barber routes - require authentication
-  if (pathname.startsWith("/app")) {
-    if (!session) {
-      console.log(`Redirecting to login from: ${pathname} (no session)`)
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-
-    return NextResponse.next()
+  // Admin routes - require admin access
+  if (pathname.startsWith("/admin") && !session.isAdmin) {
+    console.log(`Redirecting to app from: ${pathname} (not admin)`)
+    return NextResponse.redirect(new URL("/app", request.url))
   }
 
   // Default - allow access
