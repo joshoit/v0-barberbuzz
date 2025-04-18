@@ -1,13 +1,16 @@
 "use server"
 
 import { z } from "zod"
+import { createFeedback } from "./airtable"
 
 const feedbackSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  barberId: z.string(),
-  rating: z.string(),
+  customer_name: z.string().min(2),
+  rating: z.number().min(1).max(5),
+  visit_again: z.enum(["yes", "maybe", "no"]),
+  contact: z.string().min(5),
   comments: z.string().optional(),
+  opt_in: z.boolean().default(false),
+  barber_id: z.string(),
 })
 
 type FeedbackData = z.infer<typeof feedbackSchema>
@@ -16,12 +19,12 @@ export async function submitFeedback(data: FeedbackData) {
   // Validate the data
   const validatedData = feedbackSchema.parse(data)
 
-  // In a real application, you would store this in a database
-  // For now, we'll just log it and simulate a delay
-  console.log("Feedback submitted:", validatedData)
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  return { success: true }
+  try {
+    // Create feedback in Airtable
+    const feedback = await createFeedback(validatedData)
+    return { success: true, feedback }
+  } catch (error) {
+    console.error("Error submitting feedback:", error)
+    throw new Error("Failed to submit feedback")
+  }
 }

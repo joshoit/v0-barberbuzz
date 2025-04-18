@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
 import { type Store, feedbackSchema } from "@/lib/airtable"
-import { StarRating } from "./star-rating"
+import { StarRating } from "./StarRating"
 import { useToast } from "./ui/use-toast"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -18,8 +18,7 @@ import { submitFeedback } from "@/app/actions"
 type FormValues = z.infer<typeof feedbackSchema>
 
 interface FeedbackFormProps {
-  store: Store | null
-  barber?: any
+  store: Store
 }
 
 export function FeedbackForm({ store }: FeedbackFormProps) {
@@ -30,7 +29,7 @@ export function FeedbackForm({ store }: FeedbackFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
-      store: store?.id || "",
+      store: store.id,
       customerName: "",
       rating: 0,
       visitAgain: "Yes",
@@ -57,7 +56,7 @@ export function FeedbackForm({ store }: FeedbackFormProps) {
       // Reset form after 3 seconds
       setTimeout(() => {
         form.reset({
-          store: store?.id || "",
+          store: store.id,
           customerName: "",
           rating: 0,
           visitAgain: "Yes",

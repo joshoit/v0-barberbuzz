@@ -1,42 +1,84 @@
-// This is a placeholder file for database integration
-// In a real application, you would connect to a database here
+// This is a stub file to satisfy imports while we migrate from Supabase to Airtable
+// It provides empty implementations of previously used functions
 
-export interface Feedback {
+// Create a dummy supabase client that does nothing
+export const supabase = {
+  auth: {
+    signInWithPassword: async () => ({ error: new Error("Supabase auth is not implemented") }),
+    signUp: async () => ({ error: new Error("Supabase auth is not implemented") }),
+    resetPasswordForEmail: async () => ({ error: new Error("Supabase auth is not implemented") }),
+    getSession: async () => ({ data: { session: null } }),
+  },
+  from: () => ({
+    select: () => ({
+      eq: () => ({
+        single: async () => null,
+        order: () => ({
+          all: async () => [],
+        }),
+      }),
+      order: () => ({
+        all: async () => [],
+      }),
+      all: async () => [],
+      firstPage: async () => [],
+    }),
+    insert: () => ({
+      select: () => ({
+        single: async () => null,
+      }),
+    }),
+  }),
+}
+
+// Define types that might be used elsewhere
+export type Barber = {
   id: string
-  name: string
+  created_at: string
   email: string
-  barberId: string
-  rating: string
-  comments?: string
-  createdAt: Date
-}
-
-export interface Barber {
-  id: string
   name: string
-  feedbacks?: Feedback[]
+  shop_name: string
+  primary_color: string
+  accent_color: string
+  logo_url?: string
+  phone?: string
+  slug: string
 }
 
-// Mock function to save feedback
-export async function saveFeedback(feedback: Omit<Feedback, "id" | "createdAt">) {
-  // In a real application, you would save this to a database
-  console.log("Saving feedback to database:", feedback)
-
-  // Return a mock ID and timestamp
-  return {
-    ...feedback,
-    id: Math.random().toString(36).substring(2, 9),
-    createdAt: new Date(),
-  }
+export type Feedback = {
+  id: string
+  created_at: string
+  barber_id: string
+  customer_name: string
+  rating: number
+  visit_again: "yes" | "maybe" | "no"
+  contact: string
+  comments?: string
+  opt_in: boolean
 }
 
-// Mock function to get barbers
-export async function getBarbers(): Promise<Barber[]> {
-  // In a real application, you would fetch this from a database
-  return [
-    { id: "1", name: "Alex Johnson" },
-    { id: "2", name: "Sam Williams" },
-    { id: "3", name: "Jordan Taylor" },
-    { id: "4", name: "Casey Martinez" },
-  ]
+// Stub functions that return empty data
+export async function getBarberBySlug(slug: string): Promise<Barber | null> {
+  console.warn("getBarberBySlug is using the stub implementation. Please use lib/airtable.js instead.")
+  return null
+}
+
+export async function getBarberById(id: string): Promise<Barber | null> {
+  console.warn("getBarberById is using the stub implementation. Please use lib/airtable.js instead.")
+  return null
+}
+
+export async function getFeedbackForBarber(barberId: string): Promise<Feedback[]> {
+  console.warn("getFeedbackForBarber is using the stub implementation. Please use lib/airtable.js instead.")
+  return []
+}
+
+export async function createFeedback(feedback: Omit<Feedback, "id" | "created_at">): Promise<Feedback | null> {
+  console.warn("createFeedback is using the stub implementation. Please use lib/airtable.js instead.")
+  return null
+}
+
+export async function getAllBarberSlugs(): Promise<string[]> {
+  console.warn("getAllBarberSlugs is using the stub implementation. Please use lib/airtable.js instead.")
+  return []
 }
