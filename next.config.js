@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
-    domains: ["dl.airtable.com"],
     unoptimized: true,
   },
   eslint: {
@@ -11,9 +9,6 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  experimental: {
-    esmExternals: "loose",
   },
 }
 

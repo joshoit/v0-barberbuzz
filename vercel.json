@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm install --force && next build",
+  "buildCommand": "yarn install && next build",
   "devCommand": "next dev",
-  "installCommand": "npm install --force",
+  "installCommand": "yarn install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "headers": [
