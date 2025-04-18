@@ -39,8 +39,12 @@ export function AuthForm({ type }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // Use the appropriate schema based on form type
-  const schema = type === "login" ? loginSchema : type === "signup" ? signupSchema : forgotPasswordSchema
+  const schema =
+    type === "login"
+      ? loginSchema
+      : type === "signup"
+      ? signupSchema
+      : forgotPasswordSchema
 
   const form = useForm<any>({
     resolver: zodResolver(schema),
@@ -59,7 +63,6 @@ export function AuthForm({ type }: AuthFormProps) {
 
     try {
       if (type === "login") {
-        // Login with API
         const response = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,14 +72,14 @@ export function AuthForm({ type }: AuthFormProps) {
         const data = await response.json()
 
         if (!response.ok) {
+          console.error("Login failed:", data)
           throw new Error(data.error || "Login failed")
         }
 
-        // Redirect to app
         router.push("/app")
         router.refresh()
+
       } else if (type === "signup") {
-        // Signup with API
         const response = await fetch("/api/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -91,18 +94,17 @@ export function AuthForm({ type }: AuthFormProps) {
         const data = await response.json()
 
         if (!response.ok) {
+          console.error("Signup failed:", data)
           throw new Error(data.error || "Signup failed")
         }
 
         setSuccess("Account created successfully! You can now log in.")
+        setTimeout(() => router.push("/login"), 3000)
 
-        setTimeout(() => {
-          router.push("/login")
-        }, 3000)
       } else if (type === "forgot-password") {
-        // Simulate password reset
         setSuccess("Password reset instructions would be sent to your email in a real application.")
       }
+
     } catch (error: any) {
       console.error("Auth error:", error)
       setError(error.message || "An error occurred. Please try again.")

@@ -6,28 +6,42 @@ export async function POST(request: Request) {
   try {
     const { name, email, password, shop_name } = await request.json()
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 })
+    // Validate required fields
+    if (!name || !email || !password || !shop_name) {
+      return NextResponse.json(
+        { error: "Name, email, password, and shop name are required" },
+        { status: 400 }
+      )
     }
 
-    // Hash password
+    // Hash password securely
     const passwordHash = await hashPassword(password)
 
-    // Create barber in Airtable
+    // Create barber entry in Airtable
     const barber = await createBarber({
       name,
       email,
       passwordHash,
+      shop_name,
       isAdmin: false,
     })
 
+    // Handle Airtable failure
     if (!barber) {
       return NextResponse.json({ error: "Failed to create barber" }, { status: 500 })
     }
 
+    // Respond with success and created record info
     return NextResponse.json(
-      { success: true, barber: { id: barber.id, name: barber.name, email: barber.email } },
-      { status: 201 },
+      {
+        success: true,
+        barber: {
+          id: barber.id,
+          name: barber.name,
+          email: barber.email,
+        },
+      },
+      { status: 201 }
     )
   } catch (error) {
     console.error("Signup error:", error)
