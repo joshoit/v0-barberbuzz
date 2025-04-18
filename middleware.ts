@@ -10,8 +10,10 @@ export async function middleware(request: NextRequest) {
 
   // Public routes - accessible to everyone
   if (
-    pathname === "/login" ||
     pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/login") ||
     pathname.startsWith("/api/signup") ||
