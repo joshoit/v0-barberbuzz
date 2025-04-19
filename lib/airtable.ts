@@ -214,12 +214,36 @@ export async function getFeedbackForBarber(barberId: string): Promise<Feedback[]
 // ----------------------
 
 // Fetch stores linked to a barber by ID using linked field logic
-export async function getStoresByBarberId(barberId: string): Promise<Store[]> {
+//export async function getStoresByBarberId(barberId: string): Promise<Store[]> {
+// try {
+//    const records = await base("Stores")
+//      .select({
+//        // ARRAYJOIN is used to search across linked record array
+//        filterByFormula: `FIND("${barberId}", ARRAYJOIN(Barber))`,
+//      })
+//      .all()
+//
+//    return records.map((record) => ({
+//      id: record.id,
+//      name: record.fields["Name"] as string,
+//      slug: record.fields["Slug"] as string,
+//     primaryColor: record.fields["Primary Color"] as string,
+//     accentColor: record.fields["Accent Color"] as string,
+//      logo: (record.fields["Logo"] as any)?.[0]?.url ?? "", // use first image
+//      barber: "", // optional: link back barber if needed
+//    }))
+//  } catch (error) {
+//    console.error("Error fetching stores by barber ID:", error)
+//    throw new Error("Failed to fetch stores for barber.")
+//  }
+//}
+
+// Fetch stores linked to a barber using email (used when Airtable links are email-based)
+export async function getStoresByBarberEmail(email: string): Promise<Store[]> {
   try {
     const records = await base("Stores")
       .select({
-        // ARRAYJOIN is used to search across linked record array
-        filterByFormula: `FIND("${barberId}", ARRAYJOIN(Barber))`,
+        filterByFormula: `FIND("${email}", ARRAYJOIN(Barber))`, // Barber is a linked field (emails)
       })
       .all()
 
@@ -229,11 +253,11 @@ export async function getStoresByBarberId(barberId: string): Promise<Store[]> {
       slug: record.fields["Slug"] as string,
       primaryColor: record.fields["Primary Color"] as string,
       accentColor: record.fields["Accent Color"] as string,
-      logo: (record.fields["Logo"] as any)?.[0]?.url ?? "", // use first image
-      barber: "", // optional: link back barber if needed
+      logo: (record.fields["Logo"] as any)?.[0]?.url ?? "",
+      barber: email, // optional, to show email relation
     }))
   } catch (error) {
-    console.error("Error fetching stores by barber ID:", error)
+    console.error("Error fetching stores by email:", error)
     throw new Error("Failed to fetch stores for barber.")
   }
 }

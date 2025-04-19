@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
-import { getStoresByBarberId } from "@/lib/airtable"
+import { getStoresByBarberEmail } from "@/lib/airtable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -13,7 +13,8 @@ export default async function SelectStorePage() {
     redirect("/login")
   }
 
-  const stores = await getStoresByBarberId(session.id)
+  const stores = await getStoresByBarberEmail(session.email)
+
 
   if (stores.length === 0) {
     return (

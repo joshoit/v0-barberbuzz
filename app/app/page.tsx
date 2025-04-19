@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
-import { getStoresByBarberId } from "@/lib/airtable"
+import { getStoresByBarberEmail } from "@/lib/airtable"
+
 
 // Main entry point for the /app route
 export default async function BarberAppPage() {
@@ -13,7 +14,8 @@ export default async function BarberAppPage() {
   }
 
   // Fetch stores linked to this barber
-  const stores = await getStoresByBarberId(session.id)
+  const stores = await getStoresByBarberEmail(session.email)
+
 
   // If the barber has only one store, redirect to that store’s feedback page
   if (stores.length === 1) {
