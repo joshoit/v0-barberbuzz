@@ -1,7 +1,11 @@
 import { z } from "zod"
 import { base } from "./airtableClient"
 
-// Define types for our data model
+// ----------------------
+// TYPE DEFINITIONS
+// ----------------------
+
+// Represents a barber profile
 export interface Barber {
   id: string
   name: string
@@ -9,10 +13,11 @@ export interface Barber {
   passwordHash: string
   isAdmin: boolean
   shop_name: string
-  stores?: string[]
+  stores?: string[] // Optional linked store IDs
   createdAt?: string
 }
 
+// Represents a store/barbershop location
 export interface Store {
   id: string
   name: string
@@ -23,6 +28,7 @@ export interface Store {
   barber: string
 }
 
+// Represents customer feedback for a store
 export interface Feedback {
   id: string
   store: string
@@ -35,6 +41,10 @@ export interface Feedback {
   privateNote?: string
   createdTime: string
 }
+
+// ----------------------
+// FEEDBACK SCHEMA VALIDATION
+// ----------------------
 
 export const feedbackSchema = z.object({
   store: z.string(),
@@ -50,17 +60,22 @@ export const feedbackSchema = z.object({
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>
 
+// ----------------------
+// BARBER FUNCTIONS
+// ----------------------
+
+// Fetch all barbers
 export async function getBarbers(): Promise<Barber[]> {
   try {
     const records = await base("Barbers").select().all()
-    return records.map((record) => ({
-      id: record.id,
-      name: record.fields.Name as string,
-      email: record.fields.Email as string,
-      passwordHash: record.fields.PasswordHash as string,
-      isAdmin: record.fields.isAdmin as boolean,
-      shop_name: record.fields.ShopName as string,
-      createdAt: (record.fields.CreatedAt as string) || new Date().toISOString(),
+    return records.map((rec) => ({
+      id: rec.id,
+      name: rec.fields.Name as string,
+      email: rec.fields.Email as string,
+      passwordHash: rec.fields.PasswordHash as string,
+      isAdmin: rec.fields.isAdmin as boolean,
+      shop_name: rec.fields.Slug as string,
+      createdAt: (rec.fields.CreatedAt as string) || new Date().toISOString(),
     }))
   } catch (error) {
     console.error("Error fetching barbers:", error)
@@ -68,6 +83,7 @@ export async function getBarbers(): Promise<Barber[]> {
   }
 }
 
+// Fetch a specific barber by slug (used in URLs)
 export async function getBarberBySlug(slug: string): Promise<Barber | null> {
   try {
     const records = await base("Barbers")
@@ -82,7 +98,7 @@ export async function getBarberBySlug(slug: string): Promise<Barber | null> {
       email: records[0].fields.Email as string,
       passwordHash: records[0].fields.PasswordHash as string,
       isAdmin: records[0].fields.isAdmin as boolean,
-      shop_name: records[0].fields.ShopName as string,
+      shop_name: records[0].fields.Slug as string,
       createdAt: (records[0].fields.CreatedAt as string) || new Date().toISOString(),
     }
   } catch (error) {
@@ -91,6 +107,81 @@ export async function getBarberBySlug(slug: string): Promise<Barber | null> {
   }
 }
 
+// Fetch a specific barber by email (used during login)
+export async function getBarberByEmail(email: string): Promise<Barber | null> {
+  try {
+    const records = await base("Barbers")
+      .select({ filterByFormula: `{Email}='${email}'` })
+      .firstPage()
+
+    if (records.length === 0) return null
+
+    return {
+      id: records[0].id,
+      name: records[0].fields.Name as string,
+      email: records[0].fields.Email as string,
+      passwordHash: records[0].fields.PasswordHash as string,
+      isAdmin: !!records[0].fields.isAdmin,
+      shop_name: records[0].fields.Slug as string,
+      createdAt: (records[0].fields.CreatedAt as string) || new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error(`Error fetching barber with email ${email}:`, error)
+    throw error
+  }
+}
+
+// Create a new barber record in Airtable
+export async function createBarber(data: {
+  name: string
+  email: string
+  passwordHash: string
+  isAdmin: boolean
+  shop_name: string
+}): Promise<Barber | null> {
+  try {
+    const createdRecord = await base("Barbers").create([
+      {
+        fields: {
+          Name: data.name,
+          Email: data.email,
+          PasswordHash: data.passwordHash,
+          isAdmin: data.isAdmin,
+          Slug: data.shop_name.toLowerCase().replace(/\s+/g, "-"), // safe slug
+        },
+      },
+    ])
+
+    return {
+      id: createdRecord[0].id,
+      name: createdRecord[0].fields.Name as string,
+      email: createdRecord[0].fields.Email as string,
+      passwordHash: createdRecord[0].fields.PasswordHash as string,
+      isAdmin: createdRecord[0].fields.isAdmin as boolean,
+      shop_name: createdRecord[0].fields.Slug as string,
+    }
+  } catch (error) {
+    console.error("Error creating barber:", error)
+    return null
+  }
+}
+
+// Return all available barber slugs
+export async function getAllBarberSlugs(): Promise<string[]> {
+  try {
+    const barbers = await getBarbers()
+    return barbers.map((barber) => barber.shop_name || "")
+  } catch (error) {
+    console.error("Error fetching barber slugs:", error)
+    return []
+  }
+}
+
+// ----------------------
+// FEEDBACK FUNCTIONS
+// ----------------------
+
+// Fetch all feedback associated with a barber (by ID)
 export async function getFeedbackForBarber(barberId: string): Promise<Feedback[]> {
   try {
     const records = await base("Feedback")
@@ -118,65 +209,31 @@ export async function getFeedbackForBarber(barberId: string): Promise<Feedback[]
   }
 }
 
-export async function getAllBarberSlugs(): Promise<string[]> {
+// ----------------------
+// STORE FUNCTIONS
+// ----------------------
+
+// Fetch stores linked to a barber by ID using linked field logic
+export async function getStoresByBarberId(barberId: string): Promise<Store[]> {
   try {
-    const barbers = await getBarbers()
-    return barbers.map((barber) => barber.shop_name || "")
-  } catch (error) {
-    console.error("Error fetching barber slugs:", error)
-    return []
-  }
-}
+    const records = await base("Stores")
+      .select({
+        // ARRAYJOIN is used to search across linked record array
+        filterByFormula: `FIND("${barberId}", ARRAYJOIN(Barber))`,
+      })
+      .all()
 
-export async function getBarberByEmail(email: string): Promise<Barber | null> {
-  try {
-    const records = await base("Barbers")
-      .select({ filterByFormula: `{Email}='${email}'` })
-      .firstPage()
-
-    if (records.length === 0) return null
-
-    return {
-      id: records[0].id,
-      name: records[0].fields.Name as string,
-      email: records[0].fields.Email as string,
-      passwordHash: records[0].fields.PasswordHash as string,
-      isAdmin: !!records[0].fields.isAdmin,
-      shop_name: records[0].fields.ShopName as string,
-      createdAt: (records[0].fields.CreatedAt as string) || new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error(`Error fetching barber with email ${email}:`, error)
-    throw error
-  }
-}
-
-export async function createBarber(data: {
-  name: string
-  email: string
-  passwordHash: string
-  isAdmin: boolean
-  shop_name: string
-}): Promise<Barber | null> {
-  try {
-    const record = await base("Barbers").create({
-      Name: data.name,
-      Email: data.email,
-      PasswordHash: data.passwordHash,
-      isAdmin: data.isAdmin,
-      ShopName: data.shop_name,
-    })
-
-    return {
+    return records.map((record) => ({
       id: record.id,
-      name: record.fields.Name as string,
-      email: record.fields.Email as string,
-      passwordHash: record.fields.PasswordHash as string,
-      isAdmin: record.fields.isAdmin as boolean,
-      shop_name: record.fields.ShopName as string,
-    }
+      name: record.fields["Name"] as string,
+      slug: record.fields["Slug"] as string,
+      primaryColor: record.fields["Primary Color"] as string,
+      accentColor: record.fields["Accent Color"] as string,
+      logo: (record.fields["Logo"] as any)?.[0]?.url ?? "", // use first image
+      barber: "", // optional: link back barber if needed
+    }))
   } catch (error) {
-    console.error("Error creating barber:", error)
-    return null
+    console.error("Error fetching stores by barber ID:", error)
+    throw new Error("Failed to fetch stores for barber.")
   }
 }
